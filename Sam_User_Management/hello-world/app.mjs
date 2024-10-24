@@ -5,6 +5,7 @@ export const lambdaHandler = async (event, context) => {
         return {
             'statusCode': 200,
             'body': JSON.stringify({
+                Status:"SUCCESS",
                 message: 'Hello Lokesh Kumar Lambda Function has been created Successfully..!',
             })
         }
