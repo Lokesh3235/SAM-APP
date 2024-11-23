@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  'Monument SAM Appsync Templates'
+
+Parameters:
+  Environment:
+    Type: String
+  poolid:
+    Type: String
+  # Lambda Data Source
+  monumentFunctionLambda:
+    Type: String
+Resources:
+#  -------------1st run----------------
+  # PolicyFor Appysnch
+  monumentAppsyncPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      # Path: /service-role/
+      ManagedPolicyName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monumentAppsyncPolicy
+            Environment: !Ref Environment
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:UpdateItem
+              - lambda:InvokeFunction
+            Resource:
+              - "*"   
+  monumentAppsyncRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monumentAppsyncRole
+            Environment: !Ref Environment
+      ManagedPolicyArns:
+        - !Ref monumentAppsyncPolicy
+      AssumeRolePolicyDocument: { Version: 2012-10-17, Statement: [{ Effect: Allow, Principal: { Service: appsync.amazonaws.com }, Action: sts:AssumeRole }] }
+      Description: Monument appsync role
+    # ----------2nd Run-------------- 
+ 
+  #  -------------2st run----------------
+  # Monument Phone side api 
+  monumentUniverseApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name:
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_api
+            Environment: !Ref Environment
+      AuthenticationType: AWS_IAM
+      UserPoolConfig:
+        UserPoolId: !Ref poolid
+        AwsRegion: !Sub ${AWS::Region}
+        DefaultAction: ALLOW
+
+  # =-----------------3rd Run----------------
+  monumentUniverseApiSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId: !GetAtt monumentUniverseApi.ApiId
+      Definition: |
+        # Mutation
+        input MonumentBookmarked{
+        monument_id: String!
+        user_id: String!
+        is_bookmarked_status: Boolean!
+        }
+        type Mutation {
+          monument_bookmarked(input: MonumentBookmarked): AWSJSON
+        }
+        # Query
+        type Query {
+          list_all_monument_eras: AWSJSON
+        }
+
+        schema {
+          query: Query
+          mutation: Mutation
+        }
+
+  # =-----------------4th Run----------------
+  # Creating DataSource For Monument Phone Side Api
+
+   ### lambda Data Source
+  monumentFunctionLambdaDatasource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt monumentUniverseApi.ApiId
+      Name:
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_function
+            Environment: !Ref Environment
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt monumentAppsyncRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !Ref monumentFunctionLambda
+  # ---------------5 th run-------------
+  # Creating Resolvers
+  # Resolvers Query
+  monumentListAllMonumentEras:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt monumentUniverseApi.ApiId
+      TypeName: Query
+      FieldName: list_all_monument_eras
+      Kind: UNIT
+      DataSourceName: !GetAtt monumentFunctionLambdaDatasource.Name
+      RequestMappingTemplate: |
+        #set( $input = {} )
+        #set( $input = $context.args.input )
+        #set( $input.command = "list_all_monument_eras" )
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": $util.toJson($input)
+        }
+      ResponseMappingTemplate: $util.toJson($ctx.result)
+  # Resolvers For Mutation
+  monumentMonumentBookmarked:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt monumentUniverseApi.ApiId
+      TypeName: Mutation
+      FieldName: monument_bookmarked
+      Kind: UNIT
+      DataSourceName: !GetAtt monumentFunctionLambdaDatasource.Name
+      RequestMappingTemplate: |
+        #set( $input = $context.args.input )
+        #set( $input.command = "is_monument_bookmarked" )
+        {
+          "version" : "2017-02-28",
+          "operation": "Invoke",
+          "payload": $util.toJson($input)
+        }
+      ResponseMappingTemplate: $util.toJson($ctx.result)

@@ -1,0 +1,441 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  'Monument SAM Lambda Templates'
+
+Parameters:
+  Environment:
+    Type: String
+
+Resources:
+# -------------1st Run--------------
+# LambdaLayers
+  monumentLayers:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_layers
+            Environment: !Ref Environment
+      ContentUri: monument_layers/
+      Description: monument_uuid_axios_node-xlsx_fs_crypto-secure-random-digit
+      CompatibleRuntimes: [nodejs18.x, nodejs20.x]
+      RetentionPolicy: Retain
+
+# Lambda Role Policy
+  monumentMasterLambdaExecutionPolicys:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monumentMasterLambdaExecutionPolicys
+            Environment: !Ref Environment
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: VisualEditor0
+            Effect: Allow
+            Action:
+              - timestream:DescribeBatchLoadTask
+              - logs:*
+              - dynamodb:*
+              - timestream:ListBatchLoadTasks
+              - timestream:ListScheduledQueries
+              - sqs:*
+              - timestream:SelectValues
+              - ec2:DescribeNetworkInterfaces
+              - ses:*
+              - timestream:ListDatabases
+              - timestream:GetAwsBackupStatus
+              - execute-api:ManageConnections
+              - states:*
+              - timestream:ResumeBatchLoadTask
+              - s3:*
+              - timestream:CancelQuery
+              - ec2:DeleteNetworkInterface
+              - appsync:*
+              - rekognition:*
+              - ec2:CreateNetworkInterface
+              - timestream:CreateScheduledQuery
+              - timestream:DescribeEndpoints
+              - timestream:GetAwsRestoreStatus
+              - lambda:*
+              - cognito-idp:*
+              - ce:*
+              - secretsmanager:GetSecretValue
+            Resource: '*'
+          - Sid: VisualEditor1
+            Effect: Allow
+            Action: timestream:*
+            Resource: !Sub 'arn:aws:timestream:*:${AWS::AccountId}:database/*'
+          - Sid: VisualEditor2
+            Effect: Allow
+            Action: timestream:*
+            Resource: !Sub 'arn:aws:timestream:*:${AWS::AccountId}:database/*/table/*'
+          - Sid: VisualEditor3
+            Effect: Deny
+            Action:
+              - logs:CreateLogStream
+              - logs:CreateLogGroup
+              - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+
+# -------------2st Run--------------
+
+ #Lambda Role
+  monumentMasterLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monumentMasterLambdaExecutionRole
+            Environment: !Ref Environment
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref monumentMasterLambdaExecutionPolicys
+
+  # -------------3st Run--------------
+
+  # LambdaFunctions
+  monumentPreSignUpTriggerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monumenet_universe_pre_signup_lambda_trigger
+            Environment: !Ref Environment
+      CodeUri: monumenet_universe_pre_signup_lambda_trigger/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentBmsFunctionLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_bms_function
+            Environment: !Ref Environment
+      CodeUri: monument_universe_bms_function/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentCreateAuthChallengeLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_create_auth_challenge
+            Environment: !Ref Environment
+      CodeUri: monument_universe_create_auth_challenge/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+        
+  monumentCreateAuthChallengeBmsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_create_auth_challenge_bms
+            Environment: !Ref Environment
+      CodeUri: monument_universe_create_auth_challenge_bms/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentDefineAuthChallengeLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_define_auth_challenge
+            Environment: !Ref Environment
+      CodeUri: monument_universe_define_auth_challenge/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentDefineAuthChallengeBmsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_define_auth_challenge_bms
+            Environment: !Ref Environment
+      CodeUri: monument_universe_define_auth_challenge_bms/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentFunctionLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_function
+            Environment: !Ref Environment
+      CodeUri: monument_universe_function/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          project_region: !Sub ${AWS::Region}
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 120
+        MaximumRetryAttempts: 0
+      Layers:
+        - !Ref monumentLayers
+
+  monumentPreSignupTriggerBmsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_pre_signup_lambda_trigger_bms
+            Environment: !Ref Environment
+      CodeUri: monument_universe_pre_signup_lambda_trigger_bms/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentVerificationAuthChallengeLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_verification_auth_challenge
+            Environment: !Ref Environment
+      CodeUri: monument_universe_verification_auth_challenge/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentVerificationAuthChallengeBmsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_universe_verification_auth_challenge_bms
+            Environment: !Ref Environment
+      CodeUri: monument_universe_verification_auth_challenge_bms/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentVirtualTourBmsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_virtual_tour_bms_function
+            Environment: !Ref Environment
+      CodeUri: monument_virtual_tour_bms_function/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+  monumentVirtualTourLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 
+        Fn::Sub:
+          - "${FunctionName}_${Environment}"
+          - FunctionName: monument_virtual_tour_function
+            Environment: !Ref Environment
+      CodeUri: monument_virtual_tour_function/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - arm64
+      Description: PRODUCTION_V1
+      Role: !GetAtt monumentMasterLambdaExecutionRole.Arn
+      Layers:
+        - !Ref monumentLayers
+
+
+Outputs:
+  monumentPreSignUpTriggerLambda:
+    Value: !GetAtt monumentPreSignUpTriggerLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentPreSignUpTriggerLambda
+            Environment: !Ref Environment 
+     
+  monumentBmsFunctionLambda:
+    Value: !GetAtt monumentBmsFunctionLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentBmsFunctionLambda
+            Environment: !Ref Environment 
+     
+  monumentCreateAuthChallengeLambda:
+    Value: !GetAtt monumentCreateAuthChallengeLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentCreateAuthChallengeLambda
+            Environment: !Ref Environment 
+     
+  monumentCreateAuthChallengeBmsLambda:
+    Value: !GetAtt monumentCreateAuthChallengeBmsLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentCreateAuthChallengeBmsLambda
+            Environment: !Ref Environment 
+     
+  monumentDefineAuthChallengeLambda:
+    Value: !GetAtt monumentDefineAuthChallengeLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentDefineAuthChallengeLambda
+            Environment: !Ref Environment 
+     
+  monumentDefineAuthChallengeBmsLambda:
+    Value: !GetAtt monumentDefineAuthChallengeBmsLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentDefineAuthChallengeBmsLambda
+            Environment: !Ref Environment 
+     
+  monumentFunctionLambda:
+    Value: !GetAtt monumentFunctionLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentFunctionLambda
+            Environment: !Ref Environment 
+     
+  monumentPreSignupTriggerBmsLambda:
+    Value: !GetAtt monumentPreSignupTriggerBmsLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentPreSignupTriggerBmsLambda
+            Environment: !Ref Environment 
+     
+  monumentVerificationAuthChallengeLambda:
+    Value: !GetAtt monumentVerificationAuthChallengeLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentVerificationAuthChallengeLambda
+            Environment: !Ref Environment 
+     
+  monumentVerificationAuthChallengeBmsLambda:
+    Value: !GetAtt monumentVerificationAuthChallengeBmsLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentVerificationAuthChallengeBmsLambda
+            Environment: !Ref Environment 
+     
+  monumentVirtualTourBmsLambda:
+    Value: !GetAtt monumentVirtualTourBmsLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentVirtualTourBmsLambda
+            Environment: !Ref Environment 
+     
+  monumentVirtualTourLambda:
+    Value: !GetAtt monumentVirtualTourLambda.Arn
+    Export:
+      Name: 
+        Fn::Sub:
+          - "${FunctionName}-${Environment}"
+          - FunctionName: monumentVirtualTourLambda
+            Environment: !Ref Environment 
+     
+ 
